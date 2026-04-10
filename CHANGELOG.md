@@ -14,5 +14,6 @@ All notable changes to this project will be documented in this file.
 - `Boldsign.SenderIdentity` for sender identity management.
 - `Boldsign.IdentityVerification` for KYC/identity verification flows.
 - `Boldsign.Webhook` with signature verification.
+- `Boldsign.WebhookPlug` and `Boldsign.Webhook.Handler` for easy Phoenix integration.
 - `Boldsign.File` helper for multipart uploads.
 - Livebook example for embedded signing.
