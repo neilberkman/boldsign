@@ -4,6 +4,13 @@ defmodule Boldsign.Template do
   """
 
   @doc """
+  Creates an embedded template preview URL.
+  """
+  def create_embedded_preview_url(client, template_id, params \\ %{}) do
+    Req.post!(client, url: "/template/createEmbeddedPreviewUrl", params: [templateId: template_id], json: params).body
+  end
+
+  @doc """
   Lists templates.
   """
   def list(client, params \\ []) do

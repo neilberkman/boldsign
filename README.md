@@ -38,15 +38,25 @@ client = Boldsign.new(api_key: "your_api_key", region: :eu)
 
 ### Documents
 
-#### Send a Document
+#### Send a Document with Text Tags
+
+Text tags are the best way to place fields in generated PDFs without using coordinates.
 
 ```elixir
 params = %{
   title: "Agreement",
+  useTextTags: true,
+  textTagDefinitions: [
+    %{
+      definitionId: "SignHere",
+      signerIndex: 1,
+      type: "Signature"
+    }
+  ],
   signers: [%{name: "John Doe", email: "john@example.com"}]
 }
 
-{:ok, response} = Boldsign.Document.send(client, params)
+Boldsign.Document.send(client, params)
 ```
 
 #### List Documents

@@ -74,6 +74,13 @@ defmodule Boldsign.Document do
   end
 
   @doc """
+  Creates an embedded edit URL for a document.
+  """
+  def create_embedded_edit_url(client, document_id, params \\ %{}) do
+    Req.post!(client, url: "/document/createEmbeddedEditUrl", params: [documentId: document_id], json: params).body
+  end
+
+  @doc """
   Creates an embedded request URL.
   """
   def create_embedded_request_url(client, params) do

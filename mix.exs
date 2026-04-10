@@ -35,7 +35,7 @@ defmodule Boldsign.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :plug]
+      extra_applications: [:logger]
     ]
   end
 
@@ -45,6 +45,7 @@ defmodule Boldsign.MixProject do
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
       {:plug, "~> 1.16"},
+      {:plug_crypto, "~> 2.0"},
 
       # test
       {:bypass, "~> 2.1", only: :test},
