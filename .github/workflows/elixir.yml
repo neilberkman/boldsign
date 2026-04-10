@@ -72,6 +72,10 @@ jobs:
         if: matrix.elixir == '1.19.4' && matrix.otp == '28.3'
         run: mix format --check-formatted
 
+      - name: Run Credo
+        if: matrix.elixir == '1.19.4' && matrix.otp == '28.3'
+        run: mix credo --strict
+
       - name: Run Dialyzer
         if: matrix.elixir == '1.19.4' && matrix.otp == '28.3'
         run: mix dialyzer
