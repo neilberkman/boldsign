@@ -1,0 +1,94 @@
+# BoldSign Embedded Signing with Elixir
+
+## Setup
+
+This Livebook demonstrates how to use the BoldSign Elixir client for embedded signing.
+
+```elixir
+Mix.install([
+  {:boldsign, "~> 0.1.0"},
+  {:kino, "~> 0.12.0"}
+])
+```
+
+## Configuration
+
+Enter your BoldSign API Key to get started. You can find this in your BoldSign dashboard under **API** > **API Keys**.
+
+```elixir
+api_key_input = Kino.Input.password("API Key")
+region_input = Kino.Input.select("Region", [us: "US (api.boldsign.com)", eu: "EU (api-eu.boldsign.com)"])
+
+[Kino.render(api_key_input), Kino.render(region_input)]
+|> Kino.Layout.grid(columns: 2)
+```
+
+```elixir
+api_key = Kino.Input.read(api_key_input)
+region = Kino.Input.read(region_input)
+
+client = Boldsign.new(api_key: api_key, region: region)
+IO.puts("✅ Client configured for #{region} region")
+```
+
+## Step 1: Prepare Document
+
+We'll send a simple document request first.
+
+```elixir
+signer_name = Kino.Input.text("Signer Name", default: "John Doe")
+signer_email = Kino.Input.text("Signer Email", default: "john@example.com")
+
+[Kino.render(signer_name), Kino.render(signer_email)]
+|> Kino.Layout.grid(columns: 2)
+```
+
+```elixir
+params = %{
+  title: "Livebook Agreement",
+  message: "Please sign this document from Livebook.",
+  signers: [
+    %{
+      name: Kino.Input.read(signer_name),
+      email: Kino.Input.read(signer_email),
+      signerOrder: 1
+    }
+  ]
+}
+
+response = Boldsign.Document.send(client, params)
+document_id = response["documentId"]
+IO.puts("✅ Document created with ID: #{document_id}")
+```
+
+## Step 2: Get Embedded Signing Link
+
+Now we generate the link that the user will use to sign.
+
+```elixir
+# We need the email of the signer we just created
+email = Kino.Input.read(signer_email)
+
+# Get the link
+link_response = Boldsign.Document.get_embedded_sign_link(client, document_id, signerEmail: email)
+sign_link = link_response["signLink"]
+
+Kino.Markdown.new("""
+### [Click here to sign the document](#{sign_link})
+
+Or copy this URL:
+`#{sign_link}`
+""")
+```
+
+## Step 3: Check Status
+
+After signing, you can check the document properties.
+
+```elixir
+properties = Boldsign.Document.get_properties(client, document_id)
+status = properties["status"]
+IO.puts("Current Document Status: #{status}")
+
+Kino.Tree.new(properties)
+```
