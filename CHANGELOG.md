@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - `Boldsign.Template` for template-based operations.
 - `Boldsign.User` and `Boldsign.Team` for administrative operations.
 - `Boldsign.Brand` for brand management.
+- `Boldsign.SenderIdentity` for sender identity management.
+- `Boldsign.IdentityVerification` for KYC/identity verification flows.
 - `Boldsign.Webhook` with signature verification.
 - `Boldsign.File` helper for multipart uploads.
 - Livebook example for embedded signing.
