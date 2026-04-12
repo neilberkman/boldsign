@@ -15,6 +15,15 @@ defmodule Boldsign.WebhookPlug do
     secret: "your_webhook_secret"
   ```
 
+  The `secret` option can also be a zero-arity function for runtime resolution:
+
+  ```elixir
+  plug Boldsign.WebhookPlug,
+    at: "/webhook/boldsign",
+    handler: MyApp.BoldsignHandler,
+    secret: fn -> System.fetch_env!("BOLDSIGN_WEBHOOK_SECRET") end
+  ```
+
   Your handler should implement the `Boldsign.Webhook.Handler` behavior.
   """
 
@@ -35,13 +44,13 @@ defmodule Boldsign.WebhookPlug do
   def call(%Plug.Conn{method: "POST", path_info: path_info} = conn, %{path_info: path_info} = opts) do
     {:ok, payload, conn} = read_full_body(conn)
 
-    signature =
+    signature_header =
       get_req_header(conn, "x-boldsign-signature")
       |> List.first()
 
     secret = get_secret(opts[:secret])
 
-    if Boldsign.Webhook.verify_signature(payload, signature, secret) do
+    if Boldsign.Webhook.verify_signature(payload, signature_header, secret) do
       case Jason.decode(payload) do
         {:ok, event} ->
           dispatch_event(conn, opts[:handler], event)
