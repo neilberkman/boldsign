@@ -20,7 +20,7 @@ jobs:
           - elixir: "1.19.4"
             otp: "28.3"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Elixir
         uses: erlef/setup-beam@v1
@@ -31,7 +31,7 @@ jobs:
       # Standard caching pattern based on Phoenix Framework
       - name: Cache deps
         id: cache-deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: deps-v3
         with:
@@ -42,7 +42,7 @@ jobs:
 
       - name: Cache compiled build
         id: cache-build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: build-v3
         with:

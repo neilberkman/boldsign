@@ -52,15 +52,7 @@ defmodule Boldsign.Multipart do
   defp flatten_field(key, values) when is_list(values) do
     values
     |> Enum.with_index()
-    |> Enum.flat_map(fn {item, idx} ->
-      if is_map(item) do
-        Enum.map(item, fn {k, v} ->
-          {"#{key}[#{idx}][#{k}]", to_string(v)}
-        end)
-      else
-        [{"#{key}[#{idx}]", to_string(item)}]
-      end
-    end)
+    |> Enum.flat_map(fn {item, idx} -> flatten_list_item(key, idx, item) end)
   end
 
   defp flatten_field(key, value) when is_map(value) do
@@ -75,5 +67,15 @@ defmodule Boldsign.Multipart do
 
   defp flatten_field(key, value) do
     [{key, to_string(value)}]
+  end
+
+  defp flatten_list_item(key, idx, item) when is_map(item) do
+    Enum.map(item, fn {k, v} ->
+      {"#{key}[#{idx}][#{k}]", to_string(v)}
+    end)
+  end
+
+  defp flatten_list_item(key, idx, item) do
+    [{"#{key}[#{idx}]", to_string(item)}]
   end
 end
