@@ -5,14 +5,13 @@ defmodule Boldsign.Multipart do
 
   BoldSign's multipart API uses bracket notation for nested objects:
   - `signers[0][name]` = `"Neil"`
-  - `textTagDefinitions[0][type]` = `"Signature"`
+  - `signers[0][formFields][0][bounds][x]` = `"50"`
 
-  Files are extracted as `{"Files", {binary, opts}}` tuples.
+  Recursively flattens arbitrarily nested maps and lists.
   """
 
   @doc """
-  Splits files from params and returns `{file_parts, field_parts}` ready
-  for `Req.post!(client, form_multipart: file_parts ++ field_parts)`.
+  Splits files from params and returns `{file_parts, field_parts}`.
   """
   def encode(params) when is_map(params) do
     {files, rest} = Map.pop(params, :files, [])
@@ -35,47 +34,37 @@ defmodule Boldsign.Multipart do
       end)
 
     field_parts = flatten(rest)
-
     {file_parts, field_parts}
   end
 
   @doc """
-  Flattens a map into form field tuples. Matches the serialization
-  approach used by BoldSign's official Node.js and Python SDKs.
+  Flattens a map into form field tuples with recursive bracket notation.
   """
   def flatten(params) when is_map(params) do
     Enum.flat_map(params, fn {key, value} ->
-      flatten_field(to_string(key), value)
+      flatten_value(to_string(key), value)
     end)
   end
 
-  defp flatten_field(key, values) when is_list(values) do
+  defp flatten_value(prefix, values) when is_list(values) do
     values
     |> Enum.with_index()
-    |> Enum.flat_map(fn {item, idx} -> flatten_list_item(key, idx, item) end)
-  end
-
-  defp flatten_field(key, value) when is_map(value) do
-    Enum.map(value, fn {k, v} ->
-      {"#{key}[#{k}]", to_string(v)}
+    |> Enum.flat_map(fn {item, idx} ->
+      flatten_value("#{prefix}[#{idx}]", item)
     end)
   end
 
-  defp flatten_field(key, value) when is_boolean(value) do
-    [{key, to_string(value)}]
-  end
-
-  defp flatten_field(key, value) do
-    [{key, to_string(value)}]
-  end
-
-  defp flatten_list_item(key, idx, item) when is_map(item) do
-    Enum.map(item, fn {k, v} ->
-      {"#{key}[#{idx}][#{k}]", to_string(v)}
+  defp flatten_value(prefix, value) when is_map(value) do
+    Enum.flat_map(value, fn {k, v} ->
+      flatten_value("#{prefix}[#{k}]", v)
     end)
   end
 
-  defp flatten_list_item(key, idx, item) do
-    [{"#{key}[#{idx}]", to_string(item)}]
+  defp flatten_value(prefix, value) when is_boolean(value) do
+    [{prefix, to_string(value)}]
+  end
+
+  defp flatten_value(prefix, value) do
+    [{prefix, to_string(value)}]
   end
 end
