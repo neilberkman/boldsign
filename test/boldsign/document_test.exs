@@ -23,6 +23,49 @@ defmodule Boldsign.DocumentTest do
     assert %{"documentId" => "doc_123"} = Boldsign.Document.send(client, %{title: "Agreement"})
   end
 
+  test "send/2 sends multipart form data when files are present", %{bypass: bypass, client: client} do
+    Bypass.expect(bypass, "POST", "/v1/document/send", fn conn ->
+      {:ok, body, conn} = read_body(conn)
+      [content_type] = get_req_header(conn, "content-type")
+
+      assert content_type =~ "multipart/form-data"
+      assert body =~ ~s(name="Files"; filename="agreement.pdf")
+      assert body =~ ~s(name="title")
+      assert body =~ "Agreement"
+      assert body =~ ~s(name="signers[0]")
+      assert body =~ ~s(name="useTextTags")
+      assert body =~ "true"
+
+      [_, signer_json] = Regex.run(~r/name="signers\[0\]"\r\n\r\n([^\r\n]+)/, body)
+
+      assert Jason.decode!(signer_json) == %{
+               "emailAddress" => "qa@example.com",
+               "name" => "QA Lead",
+               "signerType" => "Signer"
+             }
+
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{documentId: "doc_456"}))
+    end)
+
+    assert %{"documentId" => "doc_456"} =
+             Boldsign.Document.send(client, %{
+               files: [
+                 Boldsign.File.from_binary("%PDF-1.4", "agreement.pdf", "application/pdf")
+               ],
+               signers: [
+                 %{
+                   emailAddress: "qa@example.com",
+                   name: "QA Lead",
+                   signerType: "Signer"
+                 }
+               ],
+               title: "Agreement",
+               useTextTags: true
+             })
+  end
+
   test "list/2 sends GET request", %{bypass: bypass, client: client} do
     Bypass.expect(bypass, "GET", "/v1/document/list", fn conn ->
       assert conn.query_params["page"] == "1"

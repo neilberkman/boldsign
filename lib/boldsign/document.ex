@@ -6,62 +6,30 @@ defmodule Boldsign.Document do
   @doc """
   Sends a document for signature.
 
-  Params must include `:files` (list of file tuples from `Boldsign.File`)
-  and `:signers` (list of signer maps). The request is sent as multipart
-  form data since BoldSign requires file uploads via multipart.
+  Supports two modes:
+  - **JSON** (default): params are sent as JSON, including `:fileUrls`.
+  - **Multipart** (`:files`): when non-empty `Boldsign.File` tuples are passed,
+    the request is sent as multipart form data with files + JSON-stringified
+    param fields (matching BoldSign's official SDK conventions).
   """
   def send(client, params) do
-    {files, rest} = Map.pop(params, :files, [])
+    if multipart_request?(params) do
+      {file_parts, field_parts} = Boldsign.Multipart.encode(params)
 
-    multipart =
-      files
-      |> Enum.with_index()
-      |> Enum.map(fn {file, idx} ->
-        case file do
-          {:binary, binary, opts} ->
-            filename = Keyword.get(opts, :filename, "document_#{idx}.pdf")
-            content_type = Keyword.get(opts, :content_type, "application/pdf")
-            {"Files", binary, filename: filename, content_type: content_type}
+      Req.post!(client,
+        url: "/document/send",
+        form_multipart: file_parts ++ field_parts
+      ).body
+    else
+      Req.post!(client, url: "/document/send", json: params).body
+    end
+  end
 
-          {:file, path, opts} ->
-            filename = Keyword.get(opts, :filename, Path.basename(path))
-            content_type = Keyword.get(opts, :content_type, "application/pdf")
-            {"Files", File.read!(path), filename: filename, content_type: content_type}
-        end
-      end)
-
-    form_fields =
-      rest
-      |> Enum.flat_map(fn
-        {:signers, signers} ->
-          signers
-          |> Enum.with_index()
-          |> Enum.flat_map(fn {signer, idx} ->
-            Enum.map(signer, fn {k, v} ->
-              {"Signers[#{idx}][#{k}]", to_string(v)}
-            end)
-          end)
-
-        {:textTagDefinitions, defs} ->
-          defs
-          |> Enum.with_index()
-          |> Enum.flat_map(fn {d, idx} ->
-            Enum.map(d, fn {k, v} ->
-              {"TextTagDefinitions[#{idx}][#{k}]", to_string(v)}
-            end)
-          end)
-
-        {k, v} when is_boolean(v) ->
-          [{to_string(k), to_string(v)}]
-
-        {k, v} ->
-          [{to_string(k), to_string(v)}]
-      end)
-
-    Req.post!(client,
-      url: "/document/send",
-      form_multipart: multipart ++ form_fields
-    ).body
+  defp multipart_request?(params) when is_map(params) do
+    case Map.get(params, :files) || Map.get(params, "files") do
+      files when is_list(files) and files != [] -> true
+      _ -> false
+    end
   end
 
   @doc """
@@ -110,28 +78,43 @@ defmodule Boldsign.Document do
   Reminds signers about a document.
   """
   def remind(client, document_id, params \\ %{}) do
-    Req.post!(client, url: "/document/remind", params: [documentId: document_id], json: params).body
+    Req.post!(client,
+      url: "/document/remind",
+      params: [documentId: document_id],
+      json: params
+    ).body
   end
 
   @doc """
   Revokes a document.
   """
   def revoke(client, document_id, params \\ %{}) do
-    Req.post!(client, url: "/document/revoke", params: [documentId: document_id], json: params).body
+    Req.post!(client,
+      url: "/document/revoke",
+      params: [documentId: document_id],
+      json: params
+    ).body
   end
 
   @doc """
   Creates an embedded signing link.
   """
   def get_embedded_sign_link(client, document_id, params) do
-    Req.get!(client, url: "/document/getEmbeddedSignLink", params: Keyword.merge([documentId: document_id], params)).body
+    Req.get!(client,
+      url: "/document/getEmbeddedSignLink",
+      params: Keyword.merge([documentId: document_id], params)
+    ).body
   end
 
   @doc """
   Creates an embedded edit URL for a document.
   """
   def create_embedded_edit_url(client, document_id, params \\ %{}) do
-    Req.post!(client, url: "/document/createEmbeddedEditUrl", params: [documentId: document_id], json: params).body
+    Req.post!(client,
+      url: "/document/createEmbeddedEditUrl",
+      params: [documentId: document_id],
+      json: params
+    ).body
   end
 
   @doc """
