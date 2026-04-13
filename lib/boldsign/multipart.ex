@@ -3,14 +3,11 @@ defmodule Boldsign.Multipart do
   Converts a params map into `{key, value}` tuples for Req's
   `:form_multipart` option.
 
-  Follows BoldSign's official SDK conventions:
-  - Files are extracted and encoded as `{"Files", binary, opts}`
-  - Lists of complex objects → indexed keys with JSON-stringified values
-    (`signers[0]` = `{"name":"Jo","emailAddress":"jo@x.com"}`)
-  - Lists of primitives → indexed keys with string values
-  - Dicts → bracket keys (`metaData[key]` = `value`)
-  - Booleans → `"true"` / `"false"`
-  - Everything else → `to_string`
+  BoldSign's multipart API uses bracket notation for nested objects:
+  - `signers[0][name]` = `"Neil"`
+  - `textTagDefinitions[0][type]` = `"Signature"`
+
+  Files are extracted as `{"Files", {binary, opts}}` tuples.
   """
 
   @doc """
@@ -55,11 +52,13 @@ defmodule Boldsign.Multipart do
   defp flatten_field(key, values) when is_list(values) do
     values
     |> Enum.with_index()
-    |> Enum.map(fn {item, idx} ->
+    |> Enum.flat_map(fn {item, idx} ->
       if is_map(item) do
-        {"#{key}[#{idx}]", Jason.encode!(item)}
+        Enum.map(item, fn {k, v} ->
+          {"#{key}[#{idx}][#{k}]", to_string(v)}
+        end)
       else
-        {"#{key}[#{idx}]", to_string(item)}
+        [{"#{key}[#{idx}]", to_string(item)}]
       end
     end)
   end

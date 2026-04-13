@@ -32,17 +32,12 @@ defmodule Boldsign.DocumentTest do
       assert body =~ ~s(name="Files"; filename="agreement.pdf")
       assert body =~ ~s(name="title")
       assert body =~ "Agreement"
-      assert body =~ ~s(name="signers[0]")
+      assert body =~ ~s(name="signers[0][name]")
+      assert body =~ "QA Lead"
+      assert body =~ ~s(name="signers[0][emailAddress]")
+      assert body =~ "qa@example.com"
       assert body =~ ~s(name="useTextTags")
       assert body =~ "true"
-
-      [_, signer_json] = Regex.run(~r/name="signers\[0\]"\r\n\r\n([^\r\n]+)/, body)
-
-      assert Jason.decode!(signer_json) == %{
-               "emailAddress" => "qa@example.com",
-               "name" => "QA Lead",
-               "signerType" => "Signer"
-             }
 
       conn
       |> put_resp_content_type("application/json")

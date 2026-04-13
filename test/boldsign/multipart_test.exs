@@ -1,7 +1,7 @@
 defmodule Boldsign.MultipartTest do
   use ExUnit.Case, async: true
 
-  test "encode/1 keeps files separate and JSON-encodes complex list items" do
+  test "encode/1 keeps files separate and flattens nested objects with bracket notation" do
     pdf = "%PDF-1.4 test"
 
     {file_parts, field_parts} =
@@ -28,22 +28,14 @@ defmodule Boldsign.MultipartTest do
     assert {"title", "FSMA Report"} in field_parts
     assert {"useTextTags", "true"} in field_parts
 
-    assert {"signers[0]", signer_json} =
-             Enum.find(field_parts, fn {key, _value} -> key == "signers[0]" end)
+    # Signers flattened with bracket notation
+    assert {"signers[0][emailAddress]", "qa@freshdirect.com"} in field_parts
+    assert {"signers[0][name]", "QA Lead"} in field_parts
+    assert {"signers[0][signerType]", "Signer"} in field_parts
 
-    assert Jason.decode!(signer_json) == %{
-             "emailAddress" => "qa@freshdirect.com",
-             "name" => "QA Lead",
-             "signerType" => "Signer"
-           }
-
-    assert {"textTagDefinitions[0]", text_tag_json} =
-             Enum.find(field_parts, fn {key, _value} -> key == "textTagDefinitions[0]" end)
-
-    assert Jason.decode!(text_tag_json) == %{
-             "definitionId" => "SignHere",
-             "signerIndex" => 1,
-             "type" => "Signature"
-           }
+    # Text tag definitions flattened with bracket notation
+    assert {"textTagDefinitions[0][definitionId]", "SignHere"} in field_parts
+    assert {"textTagDefinitions[0][signerIndex]", "1"} in field_parts
+    assert {"textTagDefinitions[0][type]", "Signature"} in field_parts
   end
 end
