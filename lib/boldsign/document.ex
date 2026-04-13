@@ -5,9 +5,63 @@ defmodule Boldsign.Document do
 
   @doc """
   Sends a document for signature.
+
+  Params must include `:files` (list of file tuples from `Boldsign.File`)
+  and `:signers` (list of signer maps). The request is sent as multipart
+  form data since BoldSign requires file uploads via multipart.
   """
   def send(client, params) do
-    Req.post!(client, url: "/document/send", json: params).body
+    {files, rest} = Map.pop(params, :files, [])
+
+    multipart =
+      files
+      |> Enum.with_index()
+      |> Enum.map(fn {file, idx} ->
+        case file do
+          {:binary, binary, opts} ->
+            filename = Keyword.get(opts, :filename, "document_#{idx}.pdf")
+            content_type = Keyword.get(opts, :content_type, "application/pdf")
+            {"Files", binary, filename: filename, content_type: content_type}
+
+          {:file, path, opts} ->
+            filename = Keyword.get(opts, :filename, Path.basename(path))
+            content_type = Keyword.get(opts, :content_type, "application/pdf")
+            {"Files", File.read!(path), filename: filename, content_type: content_type}
+        end
+      end)
+
+    form_fields =
+      rest
+      |> Enum.flat_map(fn
+        {:signers, signers} ->
+          signers
+          |> Enum.with_index()
+          |> Enum.flat_map(fn {signer, idx} ->
+            Enum.map(signer, fn {k, v} ->
+              {"Signers[#{idx}][#{k}]", to_string(v)}
+            end)
+          end)
+
+        {:textTagDefinitions, defs} ->
+          defs
+          |> Enum.with_index()
+          |> Enum.flat_map(fn {d, idx} ->
+            Enum.map(d, fn {k, v} ->
+              {"TextTagDefinitions[#{idx}][#{k}]", to_string(v)}
+            end)
+          end)
+
+        {k, v} when is_boolean(v) ->
+          [{to_string(k), to_string(v)}]
+
+        {k, v} ->
+          [{to_string(k), to_string(v)}]
+      end)
+
+    Req.post!(client,
+      url: "/document/send",
+      form_multipart: multipart ++ form_fields
+    ).body
   end
 
   @doc """
