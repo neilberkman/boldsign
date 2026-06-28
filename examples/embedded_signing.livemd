@@ -3,54 +3,80 @@
 ## Setup
 
 This Livebook demonstrates how to use the BoldSign Elixir client for embedded signing.
+It supports either an API key or an OAuth access token and uses a public sample PDF
+URL by default so you can run it immediately.
 
 ```elixir
 Mix.install([
-  {:boldsign, "~> 0.1.0"},
+  {:boldsign, "~> 0.7.0"},
   {:kino, "~> 0.12.0"}
 ])
 ```
 
 ## Configuration
 
-Enter your BoldSign API Key to get started. You can find this in your BoldSign dashboard under **API** > **API Keys**.
+Choose your auth method, enter the credential, and select the target region.
 
 ```elixir
-api_key_input = Kino.Input.password("API Key")
-region_input = Kino.Input.select("Region", [us: "US (api.boldsign.com)", eu: "EU (api-eu.boldsign.com)"])
+auth_mode_input =
+  Kino.Input.select("Auth Method", [
+    api_key: "API Key",
+    access_token: "OAuth Access Token"
+  ])
 
-[Kino.render(api_key_input), Kino.render(region_input)]
-|> Kino.Layout.grid(columns: 2)
+credential_input = Kino.Input.password("Credential")
+
+region_input =
+  Kino.Input.select("Region", [
+    us: "US (api.boldsign.com)",
+    eu: "EU (eu-api.boldsign.com)",
+    ca: "CA (ca-api.boldsign.com)",
+    au: "AU (au-api.boldsign.com)"
+  ])
+
+[Kino.render(auth_mode_input), Kino.render(credential_input), Kino.render(region_input)]
+|> Kino.Layout.grid(columns: 3)
 ```
 
 ```elixir
-api_key = Kino.Input.read(api_key_input)
+auth_mode = Kino.Input.read(auth_mode_input)
+credential = Kino.Input.read(credential_input)
 region = Kino.Input.read(region_input)
 
-client = Boldsign.new(api_key: api_key, region: region)
-IO.puts("✅ Client configured for #{region} region")
+client =
+  case auth_mode do
+    :api_key -> Boldsign.new(api_key: credential, region: region)
+    :access_token -> Boldsign.new(access_token: credential, region: region)
+  end
+
+IO.puts("Client configured for #{region} region using #{auth_mode}")
 ```
 
 ## Step 1: Prepare Document
 
-We'll send a simple document request first.
+We'll send a simple document request first using a hosted PDF.
 
 ```elixir
 signer_name = Kino.Input.text("Signer Name", default: "John Doe")
 signer_email = Kino.Input.text("Signer Email", default: "john@example.com")
+file_url = Kino.Input.text(
+  "PDF URL",
+  default: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+)
 
-[Kino.render(signer_name), Kino.render(signer_email)]
-|> Kino.Layout.grid(columns: 2)
+[Kino.render(signer_name), Kino.render(signer_email), Kino.render(file_url)]
+|> Kino.Layout.grid(columns: 3)
 ```
 
 ```elixir
 params = %{
   title: "Livebook Agreement",
   message: "Please sign this document from Livebook.",
+  fileUrls: [Kino.Input.read(file_url)],
   signers: [
     %{
       name: Kino.Input.read(signer_name),
-      email: Kino.Input.read(signer_email),
+      emailAddress: Kino.Input.read(signer_email),
       signerOrder: 1
     }
   ]
@@ -70,7 +96,11 @@ Now we generate the link that the user will use to sign.
 email = Kino.Input.read(signer_email)
 
 # Get the link
-link_response = Boldsign.Document.get_embedded_sign_link(client, document_id, signerEmail: email)
+link_response =
+  Boldsign.Document.get_embedded_sign_link(client, document_id, %{
+    "SignerEmail" => email
+  })
+
 sign_link = link_response["signLink"]
 
 Kino.Markdown.new("""

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-06-28
+
+### Added
+- OAuth bearer token support via `Boldsign.new(access_token: ...)`.
+- New `Boldsign.Contact`, `Boldsign.ContactGroup`, `Boldsign.CustomField`, and `Boldsign.Plan` modules.
+- Additional document endpoints for attachments, audit logs, tags, recipient authentication, recipient changes, expiry updates, prefill updates, team/behalf lists, and draft sending.
+- Additional template endpoints for tags, embedded request/create/edit URLs, and embedded merge request URLs.
+- `Boldsign.User.update_metadata/2`.
+
+### Changed
+- Bumped the package version to `0.7.0`.
+- Refreshed the README and LiveBook embedded signing example for the current API surface, current regional endpoints, API-key or OAuth auth, and hosted-PDF usage.
+- Expanded request handling so document and template operations can automatically switch between JSON and multipart payloads where the official BoldSign API allows file uploads.
+- Updated the default regional base URLs to match the current official BoldSign endpoints, including CA and AU regions.
+
+### Fixed
+- Added compatibility with `req` 0.6 by converting multipart form-part names to atoms at the request boundary while preserving the exact BoldSign wire field names.
+- Corrected several HTTP verb and query-parameter mismatches in existing document, template, team, user, and identity verification wrappers.
+- Aligned identity verification requests with the current official API contract.
+
+### Tests
+- Added extensive Bypass-backed coverage across client auth, documents, templates, contacts, contact groups, custom fields, users, teams, identity verification, plan APIs, and multipart encoding.
+- Added multipart regression coverage for Req-compatible atom part names, including bracketed/dotted BoldSign field names.
+
 ## [0.5.2] - 2026-04-12
 
 ### Fixed

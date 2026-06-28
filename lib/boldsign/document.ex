@@ -13,114 +13,275 @@ defmodule Boldsign.Document do
     param fields (matching BoldSign's official SDK conventions).
   """
   def send(client, params) do
-    if multipart_request?(params) do
-      {file_parts, field_parts} = Boldsign.Multipart.encode(params)
-
-      Req.post!(client,
-        url: "/document/send",
-        form_multipart: file_parts ++ field_parts
-      ).body
-    else
-      Req.post!(client, url: "/document/send", json: params).body
-    end
-  end
-
-  defp multipart_request?(params) when is_map(params) do
-    case Map.get(params, :files) || Map.get(params, "files") do
-      files when is_list(files) and files != [] -> true
-      _ -> false
-    end
+    Boldsign.Request.request!(client, :post, "/document/send", body: params, multipart: true)
   end
 
   @doc """
   Creates a document draft.
   """
   def create(client, params) do
-    Req.post!(client, url: "/document/create", json: params).body
+    Boldsign.Request.request!(client, :post, "/document/create", body: params, multipart: true)
   end
 
   @doc """
   Edits a document.
   """
-  def edit(client, params) do
-    Req.post!(client, url: "/document/edit", json: params).body
+  def edit(client, params) when is_map(params) or is_list(params) do
+    {document_id, body} =
+      Boldsign.Request.pop_required_query_param(params, "documentId", [:documentId, "documentId"])
+
+    edit(client, document_id, body)
+  end
+
+  def edit(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :put,
+      "/document/edit",
+      query: [documentId: document_id],
+      body: params,
+      multipart: true
+    )
   end
 
   @doc """
   Deletes a document.
   """
-  def delete(client, document_id) do
-    Req.delete!(client, url: "/document/delete", params: [documentId: document_id]).body
+  def delete(client, document_id, params \\ []) do
+    query = [documentId: document_id] ++ Boldsign.Request.query_list(params)
+    Boldsign.Request.request!(client, :delete, "/document/delete", query: query)
   end
 
   @doc """
   Downloads a document.
   """
-  def download(client, document_id) do
-    Req.get!(client, url: "/document/download", params: [documentId: document_id]).body
+  def download(client, document_id, params \\ []) do
+    query = [documentId: document_id] ++ Boldsign.Request.query_list(params)
+    Boldsign.Request.request!(client, :get, "/document/download", query: query)
+  end
+
+  @doc """
+  Downloads a document attachment.
+  """
+  def download_attachment(client, document_id, attachment_id, params \\ []) do
+    query =
+      [documentId: document_id, attachmentId: attachment_id] ++ Boldsign.Request.query_list(params)
+
+    Boldsign.Request.request!(client, :get, "/document/downloadAttachment", query: query)
+  end
+
+  @doc """
+  Downloads a document audit log.
+  """
+  def download_audit_log(client, document_id, params \\ []) do
+    query = [documentId: document_id] ++ Boldsign.Request.query_list(params)
+    Boldsign.Request.request!(client, :get, "/document/downloadAuditLog", query: query)
   end
 
   @doc """
   Gets the properties of a document.
   """
   def get_properties(client, document_id) do
-    Req.get!(client, url: "/document/properties", params: [documentId: document_id]).body
+    Boldsign.Request.request!(client, :get, "/document/properties", query: [documentId: document_id])
   end
 
   @doc """
   Lists documents.
   """
   def list(client, params \\ []) do
-    Req.get!(client, url: "/document/list", params: params).body
+    Boldsign.Request.request!(client, :get, "/document/list", query: params)
+  end
+
+  @doc """
+  Lists team documents.
+  """
+  def team_list(client, params \\ []) do
+    Boldsign.Request.request!(client, :get, "/document/teamlist", query: params)
+  end
+
+  @doc """
+  Lists documents sent on behalf of or by other senders.
+  """
+  def behalf_list(client, params \\ []) do
+    Boldsign.Request.request!(client, :get, "/document/behalfList", query: params)
   end
 
   @doc """
   Reminds signers about a document.
   """
   def remind(client, document_id, params \\ %{}) do
-    Req.post!(client,
-      url: "/document/remind",
-      params: [documentId: document_id],
-      json: params
-    ).body
+    {query, body} =
+      Boldsign.Request.split_query_params(params, [
+        {"receiverEmails", [:receiverEmails, "receiverEmails"]}
+      ])
+
+    Boldsign.Request.request!(
+      client,
+      :post,
+      "/document/remind",
+      query: [documentId: document_id] ++ query,
+      body: body
+    )
   end
 
   @doc """
   Revokes a document.
   """
   def revoke(client, document_id, params \\ %{}) do
-    Req.post!(client,
-      url: "/document/revoke",
-      params: [documentId: document_id],
-      json: params
-    ).body
+    Boldsign.Request.request!(
+      client,
+      :post,
+      "/document/revoke",
+      query: [documentId: document_id],
+      body: params
+    )
+  end
+
+  @doc """
+  Adds recipient authentication to a document.
+  """
+  def add_authentication(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/addAuthentication",
+      query: [documentId: document_id],
+      body: params
+    )
+  end
+
+  @doc """
+  Removes recipient authentication from a document.
+  """
+  def remove_authentication(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/RemoveAuthentication",
+      query: [{"DocumentId", document_id}],
+      body: params
+    )
+  end
+
+  @doc """
+  Adds tags to a document.
+  """
+  def add_tags(client, params) do
+    Boldsign.Request.request!(client, :patch, "/document/addTags", body: params)
+  end
+
+  @doc """
+  Deletes tags from a document.
+  """
+  def delete_tags(client, params) do
+    Boldsign.Request.request!(client, :delete, "/document/deleteTags", body: params)
+  end
+
+  @doc """
+  Changes a signer's access code.
+  """
+  def change_access_code(client, document_id, params) do
+    {query, body} =
+      Boldsign.Request.split_query_params(params, [
+        {"EmailId", [:EmailId, :emailId, "EmailId", "emailId"]},
+        {"ZOrder", [:ZOrder, :order, "ZOrder", "order"]}
+      ])
+
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/changeAccessCode",
+      query: [{"DocumentId", document_id} | query],
+      body: body
+    )
+  end
+
+  @doc """
+  Changes a document recipient.
+  """
+  def change_recipient(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/changeRecipient",
+      query: [documentId: document_id],
+      body: params
+    )
+  end
+
+  @doc """
+  Extends a document's expiry.
+  """
+  def extend_expiry(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/extendExpiry",
+      query: [documentId: document_id],
+      body: params
+    )
+  end
+
+  @doc """
+  Prefills document fields.
+  """
+  def prefill_fields(client, document_id, params) do
+    Boldsign.Request.request!(
+      client,
+      :patch,
+      "/document/prefillFields",
+      query: [documentId: document_id],
+      body: params
+    )
+  end
+
+  @doc """
+  Sends a draft document for signature.
+  """
+  def draft_send(client, document_id) do
+    Boldsign.Request.request!(client, :post, "/document/draftSend", query: [documentId: document_id])
+  end
+
+  @doc """
+  Cancels editing for a document.
+  """
+  def cancel_editing(client, document_id, params \\ []) do
+    query = [documentId: document_id] ++ Boldsign.Request.query_list(params)
+    Boldsign.Request.request!(client, :post, "/document/cancelEditing", query: query)
   end
 
   @doc """
   Creates an embedded signing link.
   """
-  def get_embedded_sign_link(client, document_id, params) do
-    Req.get!(client,
-      url: "/document/getEmbeddedSignLink",
-      params: Keyword.merge([documentId: document_id], params)
-    ).body
+  def get_embedded_sign_link(client, document_id, params \\ []) do
+    query = [documentId: document_id] ++ Boldsign.Request.query_list(params)
+    Boldsign.Request.request!(client, :get, "/document/getEmbeddedSignLink", query: query)
   end
 
   @doc """
   Creates an embedded edit URL for a document.
   """
   def create_embedded_edit_url(client, document_id, params \\ %{}) do
-    Req.post!(client,
-      url: "/document/createEmbeddedEditUrl",
-      params: [documentId: document_id],
-      json: params
-    ).body
+    Boldsign.Request.request!(
+      client,
+      :post,
+      "/document/createEmbeddedEditUrl",
+      query: [documentId: document_id],
+      body: params,
+      multipart: true
+    )
   end
 
   @doc """
   Creates an embedded request URL.
   """
   def create_embedded_request_url(client, params) do
-    Req.post!(client, url: "/document/createEmbeddedRequestUrl", json: params).body
+    Boldsign.Request.request!(
+      client,
+      :post,
+      "/document/createEmbeddedRequestUrl",
+      body: params,
+      multipart: true
+    )
   end
 end

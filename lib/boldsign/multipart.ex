@@ -1,20 +1,24 @@
 defmodule Boldsign.Multipart do
   @moduledoc """
-  Converts a params map into `{key, value}` tuples for Req's
-  `:form_multipart` option.
+  Converts a params map into multipart field tuples.
 
   BoldSign's multipart API uses bracket notation for nested objects:
   - `signers[0][name]` = `"Neil"`
   - `signers[0][formFields][0][bounds][x]` = `"50"`
 
-  Recursively flattens arbitrarily nested maps and lists.
+  Recursively flattens arbitrarily nested maps and lists. Use
+  `form_multipart/1` for Req's `:form_multipart` option.
   """
 
   @doc """
   Splits files from params and returns `{file_parts, field_parts}`.
   """
   def encode(params) when is_map(params) do
-    {files, rest} = Map.pop(params, :files, [])
+    {files, rest} =
+      case Map.pop(params, :files) do
+        {nil, params} -> Map.pop(params, "files", [])
+        result -> result
+      end
 
     file_parts =
       files
@@ -35,6 +39,15 @@ defmodule Boldsign.Multipart do
 
     field_parts = flatten(rest)
     {file_parts, field_parts}
+  end
+
+  @doc """
+  Returns Req-compatible multipart parts.
+  """
+  def form_multipart(params) when is_map(params) do
+    {file_parts, field_parts} = encode(params)
+
+    Enum.map(file_parts ++ field_parts, &atomize_name/1)
   end
 
   @doc """
@@ -67,4 +80,9 @@ defmodule Boldsign.Multipart do
   defp flatten_value(prefix, value) do
     [{prefix, to_string(value)}]
   end
+
+  # Req 0.6+ requires atom part names. BoldSign multipart field names come from
+  # a bounded API vocabulary plus positional indexes, so this conversion is safe.
+  defp atomize_name({name, value}) when is_binary(name), do: {String.to_atom(name), value}
+  defp atomize_name({name, value}) when is_atom(name), do: {name, value}
 end
