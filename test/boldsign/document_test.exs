@@ -1,8 +1,8 @@
 defmodule Boldsign.DocumentTest do
   use Boldsign.ApiCase, async: true
 
-  test "send/2 sends JSON by default", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/send", fn conn ->
+  test "send/2 sends JSON by default", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/send", fn conn ->
       {params, conn} = read_json_body(conn)
 
       assert get_req_header(conn, "x-api-key") == ["test_key"]
@@ -14,8 +14,8 @@ defmodule Boldsign.DocumentTest do
     assert %{"documentId" => "doc_123"} = Boldsign.Document.send(client, %{title: "Agreement"})
   end
 
-  test "send/2 sends multipart form data when files are present", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/send", fn conn ->
+  test "send/2 sends multipart form data when files are present", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/send", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 
@@ -35,8 +35,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "edit/3 uses PUT and supports multipart bodies", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PUT", "/v1/document/edit", fn conn ->
+  test "edit/3 uses PUT and supports multipart bodies", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PUT", "/v1/document/edit", fn conn ->
       conn = fetch_query(conn)
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
@@ -57,8 +57,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "edit/2 extracts documentId from params", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PUT", "/v1/document/edit", fn conn ->
+  test "edit/2 extracts documentId from params", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PUT", "/v1/document/edit", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -72,8 +72,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.edit(client, %{documentId: "doc_123", title: "Updated Agreement"})
   end
 
-  test "delete/3 passes optional query params", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "DELETE", "/v1/document/delete", fn conn ->
+  test "delete/3 passes optional query params", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "DELETE", "/v1/document/delete", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -85,8 +85,8 @@ defmodule Boldsign.DocumentTest do
     assert "" == Boldsign.Document.delete(client, "doc_123", deletePermanently: true)
   end
 
-  test "download/3 passes optional onBehalfOf query", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/download", fn conn ->
+  test "download/3 passes optional onBehalfOf query", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/download", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -99,8 +99,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.download(client, "doc_123", onBehalfOf: "sender@example.com")
   end
 
-  test "download_attachment/4 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/downloadAttachment", fn conn ->
+  test "download_attachment/4 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/downloadAttachment", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -119,8 +119,8 @@ defmodule Boldsign.DocumentTest do
              )
   end
 
-  test "download_audit_log/3 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/downloadAuditLog", fn conn ->
+  test "download_audit_log/3 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/downloadAuditLog", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -131,8 +131,8 @@ defmodule Boldsign.DocumentTest do
     assert "AUDIT_LOG" == Boldsign.Document.download_audit_log(client, "doc_123")
   end
 
-  test "list/2 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/list", fn conn ->
+  test "list/2 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/list", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["page"] == "1"
       json_response(conn, 200, %{result: []})
@@ -141,8 +141,8 @@ defmodule Boldsign.DocumentTest do
     assert %{"result" => []} = Boldsign.Document.list(client, page: 1)
   end
 
-  test "team_list/2 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/teamlist", fn conn ->
+  test "team_list/2 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/teamlist", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["TeamId"] == "team_123"
       json_response(conn, 200, %{result: []})
@@ -151,8 +151,8 @@ defmodule Boldsign.DocumentTest do
     assert %{"result" => []} = Boldsign.Document.team_list(client, [{"TeamId", "team_123"}])
   end
 
-  test "behalf_list/2 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/behalfList", fn conn ->
+  test "behalf_list/2 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/behalfList", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["EmailAddress"] == "sender@example.com"
       json_response(conn, 200, %{result: []})
@@ -162,8 +162,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.behalf_list(client, [{"EmailAddress", "sender@example.com"}])
   end
 
-  test "revoke/3 sends POST request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/revoke", fn conn ->
+  test "revoke/3 sends POST request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/revoke", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -176,8 +176,8 @@ defmodule Boldsign.DocumentTest do
     assert "" == Boldsign.Document.revoke(client, "doc_123", %{message: "Revoked"})
   end
 
-  test "add_authentication/3 sends PATCH request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/addAuthentication", fn conn ->
+  test "add_authentication/3 sends PATCH request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/addAuthentication", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -194,8 +194,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "remove_authentication/3 uses DocumentId query casing", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/RemoveAuthentication", fn conn ->
+  test "remove_authentication/3 uses DocumentId query casing", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/RemoveAuthentication", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -209,8 +209,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.remove_authentication(client, "doc_123", %{emailId: "signer@example.com"})
   end
 
-  test "add_tags/2 and delete_tags/2 send request bodies", %{bypass: bypass, client: client} do
-    Bypass.expect_once(bypass, "PATCH", "/v1/document/addTags", fn conn ->
+  test "add_tags/2 and delete_tags/2 send request bodies", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect_once(server, "PATCH", "/v1/document/addTags", fn conn ->
       {params, conn} = read_json_body(conn)
       assert params["documentId"] == "doc_123"
       assert params["tags"] == ["one", "two"]
@@ -221,8 +221,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.add_tags(client, %{documentId: "doc_123", tags: ["one", "two"]})
   end
 
-  test "delete_tags/2 sends DELETE with JSON body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "DELETE", "/v1/document/deleteTags", fn conn ->
+  test "delete_tags/2 sends DELETE with JSON body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "DELETE", "/v1/document/deleteTags", fn conn ->
       {params, conn} = read_json_body(conn)
       assert params["documentId"] == "doc_123"
       assert params["tags"] == ["one"]
@@ -233,8 +233,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.delete_tags(client, %{documentId: "doc_123", tags: ["one"]})
   end
 
-  test "change_access_code/3 splits query params from body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/changeAccessCode", fn conn ->
+  test "change_access_code/3 splits query params from body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/changeAccessCode", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -254,8 +254,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "change_recipient/3 sends PATCH request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/changeRecipient", fn conn ->
+  test "change_recipient/3 sends PATCH request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/changeRecipient", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -272,8 +272,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "extend_expiry/3 sends PATCH request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/extendExpiry", fn conn ->
+  test "extend_expiry/3 sends PATCH request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/extendExpiry", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -287,8 +287,8 @@ defmodule Boldsign.DocumentTest do
              Boldsign.Document.extend_expiry(client, "doc_123", %{newExpiryValue: 10})
   end
 
-  test "prefill_fields/3 sends PATCH request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PATCH", "/v1/document/prefillFields", fn conn ->
+  test "prefill_fields/3 sends PATCH request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PATCH", "/v1/document/prefillFields", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -304,8 +304,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "draft_send/2 sends POST request without body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/draftSend", fn conn ->
+  test "draft_send/2 sends POST request without body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/draftSend", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["documentId"] == "doc_123"
       send_resp(conn, 201, "")
@@ -314,8 +314,8 @@ defmodule Boldsign.DocumentTest do
     assert "" == Boldsign.Document.draft_send(client, "doc_123")
   end
 
-  test "cancel_editing/3 sends POST request with optional query params", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/cancelEditing", fn conn ->
+  test "cancel_editing/3 sends POST request with optional query params", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/cancelEditing", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -327,8 +327,8 @@ defmodule Boldsign.DocumentTest do
     assert "" == Boldsign.Document.cancel_editing(client, "doc_123", onBehalfOf: "sender@example.com")
   end
 
-  test "get_embedded_sign_link/3 accepts query maps and keywords", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/document/getEmbeddedSignLink", fn conn ->
+  test "get_embedded_sign_link/3 accepts query maps and keywords", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/document/getEmbeddedSignLink", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["documentId"] == "doc_123"
@@ -345,8 +345,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "create_embedded_edit_url/3 supports multipart bodies", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/createEmbeddedEditUrl", fn conn ->
+  test "create_embedded_edit_url/3 supports multipart bodies", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/createEmbeddedEditUrl", fn conn ->
       conn = fetch_query(conn)
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
@@ -364,8 +364,8 @@ defmodule Boldsign.DocumentTest do
              })
   end
 
-  test "create_embedded_request_url/2 supports multipart bodies", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/createEmbeddedRequestUrl", fn conn ->
+  test "create_embedded_request_url/2 supports multipart bodies", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/createEmbeddedRequestUrl", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 

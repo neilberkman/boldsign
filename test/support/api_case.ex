@@ -12,10 +12,10 @@ defmodule Boldsign.ApiCase do
   end
 
   setup do
-    bypass = Bypass.open()
-    client = Boldsign.new(api_key: "test_key", base_url: "http://localhost:#{bypass.port}/v1")
+    server = Boldsign.TestHTTPServer.open()
+    client = Boldsign.new(api_key: "test_key", base_url: "http://localhost:#{server.port}/v1")
 
-    {:ok, bypass: bypass, client: client}
+    {:ok, server: server, client: client}
   end
 
   def json_response(conn, status, body) do

@@ -94,4 +94,17 @@ defmodule Boldsign.MultipartTest do
     assert body =~ "Agreement"
     assert body =~ "true"
   end
+
+  test "encode_raw/1 escapes field names and filenames in content disposition headers" do
+    {body, _content_type} =
+      Boldsign.Multipart.encode_raw(%{
+        "field\"\r\nname" => "value",
+        files: [Boldsign.File.from_binary("PDF", "file\"\r\nname.pdf", "application/pdf")]
+      })
+
+    assert body =~ ~s(name="field%22%0D%0Aname")
+    assert body =~ ~s(filename="file%22%0D%0Aname.pdf")
+    refute body =~ "field\"\r\nname"
+    refute body =~ "file\"\r\nname.pdf"
+  end
 end

@@ -137,5 +137,7 @@ defmodule Boldsign.Multipart do
     [{prefix, to_string(value)}]
   end
 
-  defp escape_param(value), do: String.replace(value, "\"", "\\\"")
+  defp escape_param(value) when is_binary(value) do
+    URI.encode(value, &(&1 not in [?", ?\r, ?\n]))
+  end
 end

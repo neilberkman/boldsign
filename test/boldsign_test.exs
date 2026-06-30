@@ -4,13 +4,13 @@ defmodule BoldsignTest do
   import Plug.Conn
 
   setup do
-    bypass = Bypass.open()
-    client = Boldsign.new(api_key: "test_key", base_url: "http://localhost:#{bypass.port}/v1")
-    {:ok, bypass: bypass, client: client}
+    server = Boldsign.TestHTTPServer.open()
+    client = Boldsign.new(api_key: "test_key", base_url: "http://localhost:#{server.port}/v1")
+    {:ok, server: server, client: client}
   end
 
-  test "Boldsign.Document.send/2", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/document/send", fn conn ->
+  test "Boldsign.Document.send/2", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/send", fn conn ->
       {:ok, body, conn} = read_body(conn)
       params = Jason.decode!(body)
 

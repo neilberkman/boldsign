@@ -14,7 +14,7 @@ Use it to send documents for signature, generate embedded signing links, manage 
 - Covers the most useful BoldSign API areas in a lightweight, idiomatic Elixir wrapper.
 - Automatically switches between JSON and multipart requests when file uploads are present.
 - Includes Phoenix-friendly webhook verification helpers.
-- Ships with broad Bypass-backed test coverage so wrappers stay honest.
+- Ships with broad Bandit-backed test coverage so wrappers stay honest.
 
 ## Quick Start with LiveBook
 
@@ -29,7 +29,7 @@ Add `boldsign` to your dependencies:
 ```elixir
 def deps do
   [
-    {:boldsign, "~> 0.7.0"}
+    {:boldsign, "~> 0.8.0"}
   ]
 end
 ```
@@ -190,7 +190,7 @@ mix format
 mix test
 ```
 
-The test suite uses Bypass and exercises the request shapes for auth, multipart uploads, documents, templates, contacts, contact groups, custom fields, users, teams, identity verification, and plan APIs.
+The test suite uses Bandit and exercises the request payloads for auth, multipart uploads, documents, templates, contacts, contact groups, custom fields, users, teams, identity verification, and plan APIs.
 
 ## Credits
 

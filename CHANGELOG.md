@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-06-30
+
+### Changed
+- Bumped the package version to `0.8.0`.
+- Replaced Bypass-backed tests with a small Bandit-backed local test server.
+- Multipart uploads now use raw request bodies to avoid creating atoms from dynamic BoldSign form field names.
+
+### Fixed
+- Empty multipart list fields now encode as `"[]"` instead of being omitted.
+- Multipart field names and filenames now percent-escape `"`, CR, and LF in content disposition headers.
+- Webhook signature parsing now handles BoldSign headers with a space after the comma, such as `t=TIMESTAMP, s0=SIGNATURE`.
+
+### Tests
+- Added regression coverage for empty list multipart encoding, raw multipart request encoding, multipart content disposition escaping, and spaced webhook signature headers.
+
 ## [0.7.0] - 2026-06-28
 
 ### Added
@@ -23,7 +38,7 @@ All notable changes to this project will be documented in this file.
 - Aligned identity verification requests with the current official API contract.
 
 ### Tests
-- Added extensive Bypass-backed coverage across client auth, documents, templates, contacts, contact groups, custom fields, users, teams, identity verification, plan APIs, and multipart encoding.
+- Added extensive local HTTP server coverage across client auth, documents, templates, contacts, contact groups, custom fields, users, teams, identity verification, plan APIs, and multipart encoding.
 - Added multipart regression coverage for Req-compatible atom part names, including bracketed/dotted BoldSign field names.
 
 ## [0.5.2] - 2026-04-12

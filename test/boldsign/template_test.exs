@@ -1,8 +1,8 @@
 defmodule Boldsign.TemplateTest do
   use Boldsign.ApiCase, async: true
 
-  test "list/2 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/template/list", fn conn ->
+  test "list/2 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/template/list", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["page"] == "1"
       json_response(conn, 200, %{result: []})
@@ -11,8 +11,8 @@ defmodule Boldsign.TemplateTest do
     assert %{"result" => []} = Boldsign.Template.list(client, page: 1)
   end
 
-  test "create/2 supports multipart requests", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/create", fn conn ->
+  test "create/2 supports multipart requests", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/create", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 
@@ -31,8 +31,8 @@ defmodule Boldsign.TemplateTest do
              })
   end
 
-  test "send/3 supports multipart requests", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/send", fn conn ->
+  test "send/3 supports multipart requests", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/send", fn conn ->
       conn = fetch_query(conn)
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
@@ -50,8 +50,8 @@ defmodule Boldsign.TemplateTest do
              })
   end
 
-  test "edit/3 uses PUT", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "PUT", "/v1/template/edit", fn conn ->
+  test "edit/3 uses PUT", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "PUT", "/v1/template/edit", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -65,8 +65,8 @@ defmodule Boldsign.TemplateTest do
              Boldsign.Template.edit(client, "tpl_123", %{title: "Updated Template"})
   end
 
-  test "delete/3 passes optional query params", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "DELETE", "/v1/template/delete", fn conn ->
+  test "delete/3 passes optional query params", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "DELETE", "/v1/template/delete", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["templateId"] == "tpl_123"
@@ -78,8 +78,8 @@ defmodule Boldsign.TemplateTest do
     assert "" == Boldsign.Template.delete(client, "tpl_123", onBehalfOf: "sender@example.com")
   end
 
-  test "download/3 passes optional query params", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/template/download", fn conn ->
+  test "download/3 passes optional query params", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/template/download", fn conn ->
       conn = fetch_query(conn)
 
       assert conn.query_params["templateId"] == "tpl_123"
@@ -92,8 +92,8 @@ defmodule Boldsign.TemplateTest do
              Boldsign.Template.download(client, "tpl_123", includeFormFieldValues: true)
   end
 
-  test "get_properties/2 sends GET request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "GET", "/v1/template/properties", fn conn ->
+  test "get_properties/2 sends GET request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "GET", "/v1/template/properties", fn conn ->
       conn = fetch_query(conn)
       assert conn.query_params["templateId"] == "tpl_123"
       json_response(conn, 200, %{templateId: "tpl_123"})
@@ -102,8 +102,8 @@ defmodule Boldsign.TemplateTest do
     assert %{"templateId" => "tpl_123"} = Boldsign.Template.get_properties(client, "tpl_123")
   end
 
-  test "add_tags/2 and delete_tags/2 send bodies", %{bypass: bypass, client: client} do
-    Bypass.expect_once(bypass, "PATCH", "/v1/template/addTags", fn conn ->
+  test "add_tags/2 and delete_tags/2 send bodies", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect_once(server, "PATCH", "/v1/template/addTags", fn conn ->
       {params, conn} = read_json_body(conn)
       assert params["templateId"] == "tpl_123"
       assert params["templateLabels"] == ["nda"]
@@ -114,8 +114,8 @@ defmodule Boldsign.TemplateTest do
              Boldsign.Template.add_tags(client, %{templateId: "tpl_123", templateLabels: ["nda"]})
   end
 
-  test "delete_tags/2 sends DELETE with body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "DELETE", "/v1/template/deleteTags", fn conn ->
+  test "delete_tags/2 sends DELETE with body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "DELETE", "/v1/template/deleteTags", fn conn ->
       {params, conn} = read_json_body(conn)
       assert params["templateId"] == "tpl_123"
       assert params["templateLabels"] == ["nda"]
@@ -126,8 +126,8 @@ defmodule Boldsign.TemplateTest do
              Boldsign.Template.delete_tags(client, %{templateId: "tpl_123", templateLabels: ["nda"]})
   end
 
-  test "create_embedded_request_url/3 supports multipart requests", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/createEmbeddedRequestUrl", fn conn ->
+  test "create_embedded_request_url/3 supports multipart requests", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/createEmbeddedRequestUrl", fn conn ->
       conn = fetch_query(conn)
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
@@ -145,8 +145,8 @@ defmodule Boldsign.TemplateTest do
              })
   end
 
-  test "create_embedded_template_url/2 supports multipart requests", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/createEmbeddedTemplateUrl", fn conn ->
+  test "create_embedded_template_url/2 supports multipart requests", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/createEmbeddedTemplateUrl", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 
@@ -162,8 +162,8 @@ defmodule Boldsign.TemplateTest do
              })
   end
 
-  test "get_embedded_template_edit_url/3 sends request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/getEmbeddedTemplateEditUrl", fn conn ->
+  test "get_embedded_template_edit_url/3 sends request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/getEmbeddedTemplateEditUrl", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -179,8 +179,8 @@ defmodule Boldsign.TemplateTest do
              })
   end
 
-  test "create_embedded_preview_url/3 sends request", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/createEmbeddedPreviewUrl", fn conn ->
+  test "create_embedded_preview_url/3 sends request", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/createEmbeddedPreviewUrl", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -194,8 +194,8 @@ defmodule Boldsign.TemplateTest do
              Boldsign.Template.create_embedded_preview_url(client, "tpl_123", %{showToolbar: true})
   end
 
-  test "merge_and_send/2 supports multipart requests", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/template/mergeAndSend", fn conn ->
+  test "merge_and_send/2 supports multipart requests", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/mergeAndSend", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 
@@ -212,10 +212,10 @@ defmodule Boldsign.TemplateTest do
   end
 
   test "merge_create_embedded_request_url/2 supports multipart requests", %{
-    bypass: bypass,
+    server: server,
     client: client
   } do
-    Bypass.expect(bypass, "POST", "/v1/template/mergeCreateEmbeddedRequestUrl", fn conn ->
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/template/mergeCreateEmbeddedRequestUrl", fn conn ->
       {:ok, body, conn} = read_body(conn)
       [content_type] = get_req_header(conn, "content-type")
 
