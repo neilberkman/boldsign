@@ -1,14 +1,75 @@
 defmodule Boldsign.Multipart do
   @moduledoc """
-  Converts a params map into multipart field tuples.
+  Converts a params map into a raw multipart/form-data binary.
 
   BoldSign's multipart API uses bracket notation for nested objects:
   - `signers[0][name]` = `"Neil"`
   - `signers[0][formFields][0][bounds][x]` = `"50"`
 
-  Recursively flattens arbitrarily nested maps and lists. Use
-  `form_multipart/1` for Req's `:form_multipart` option.
+  Recursively flattens arbitrarily nested maps and lists. Use `encode_raw/1`
+  to build the request body and content-type header directly, avoiding
+  `String.to_atom/1` on dynamic bracket-notation field names.
   """
+
+  @crlf "\r\n"
+
+  @doc """
+  Encodes params as a raw multipart/form-data binary.
+
+  Returns `{body, content_type}` where `body` is the encoded binary and
+  `content_type` is `"multipart/form-data; boundary=BOUNDARY"`.
+
+  Use with Req's `:body` option and set the `content-type` header manually:
+
+      {body, content_type} = Boldsign.Multipart.encode_raw(params)
+      Req.post!(client, url: "/some/endpoint", body: body, headers: [{"content-type", content_type}])
+  """
+  def encode_raw(params) when is_map(params) do
+    {file_parts, field_parts} = encode(params)
+
+    boundary = Base.encode16(:crypto.strong_rand_bytes(16), padding: false, case: :lower)
+
+    parts =
+      Enum.flat_map(field_parts, fn {name, value} ->
+        [
+          "--",
+          boundary,
+          @crlf,
+          "Content-Disposition: form-data; name=\"",
+          escape_param(name),
+          "\"",
+          @crlf,
+          @crlf,
+          to_string(value),
+          @crlf
+        ]
+      end) ++
+        Enum.flat_map(file_parts, fn {_field, {binary, opts}} ->
+          filename = Keyword.get(opts, :filename, "document.pdf")
+          content_type = Keyword.get(opts, :content_type, "application/octet-stream")
+
+          [
+            "--",
+            boundary,
+            @crlf,
+            "Content-Disposition: form-data; name=\"Files\"; filename=\"",
+            escape_param(filename),
+            "\"",
+            @crlf,
+            "Content-Type: ",
+            content_type,
+            @crlf,
+            @crlf,
+            binary,
+            @crlf
+          ]
+        end) ++
+        ["--", boundary, "--", @crlf]
+
+    body = IO.iodata_to_binary(parts)
+    content_type = "multipart/form-data; boundary=#{boundary}"
+    {body, content_type}
+  end
 
   @doc """
   Splits files from params and returns `{file_parts, field_parts}`.
@@ -42,21 +103,16 @@ defmodule Boldsign.Multipart do
   end
 
   @doc """
-  Returns Req-compatible multipart parts.
-  """
-  def form_multipart(params) when is_map(params) do
-    {file_parts, field_parts} = encode(params)
-
-    Enum.map(file_parts ++ field_parts, &atomize_name/1)
-  end
-
-  @doc """
   Flattens a map into form field tuples with recursive bracket notation.
   """
   def flatten(params) when is_map(params) do
     Enum.flat_map(params, fn {key, value} ->
       flatten_value(to_string(key), value)
     end)
+  end
+
+  defp flatten_value(prefix, []) do
+    [{prefix, "[]"}]
   end
 
   defp flatten_value(prefix, values) when is_list(values) do
@@ -81,8 +137,5 @@ defmodule Boldsign.Multipart do
     [{prefix, to_string(value)}]
   end
 
-  # Req 0.6+ requires atom part names. BoldSign multipart field names come from
-  # a bounded API vocabulary plus positional indexes, so this conversion is safe.
-  defp atomize_name({name, value}) when is_binary(name), do: {String.to_atom(name), value}
-  defp atomize_name({name, value}) when is_atom(name), do: {name, value}
+  defp escape_param(value), do: String.replace(value, "\"", "\\\"")
 end

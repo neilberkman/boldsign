@@ -68,21 +68,30 @@ defmodule Boldsign.MultipartTest do
     assert {"signers[0][formFields][0][bounds][y]", "20"} in field_parts
   end
 
-  test "form_multipart/1 returns req-compatible atom part names" do
-    pdf = "%PDF-1.4 test"
-
-    parts =
-      Boldsign.Multipart.form_multipart(%{
-        "DisableEmails" => true,
-        "Signers[0].Name" => "Alex",
-        files: [Boldsign.File.from_binary(pdf, "agreement.pdf", "application/pdf")]
+  test "encode/1 emits '[]' string for empty list fields" do
+    {_file_parts, field_parts} =
+      Boldsign.Multipart.encode(%{
+        signers: [%{name: "Jane", emailAddress: "jane@example.com", formFields: []}]
       })
 
-    assert Enum.all?(parts, fn {name, _value} -> is_atom(name) end)
+    assert {"signers[0][formFields]", "[]"} in field_parts,
+           "empty list must encode as '[]' — BoldSign rejects the empty string as null"
+  end
 
-    assert {:Files, {pdf, filename: "agreement.pdf", content_type: "application/pdf"}} in parts
-    assert {:DisableEmails, "true"} in parts
-    assert {:"Signers[0].Name", "Alex"} in parts
-    assert Atom.to_string(:"Signers[0].Name") == "Signers[0].Name"
+  test "encode_raw/1 returns a binary body and multipart content-type" do
+    pdf = "%PDF-1.4 test"
+
+    {body, content_type} =
+      Boldsign.Multipart.encode_raw(%{
+        files: [Boldsign.File.from_binary(pdf, "agreement.pdf", "application/pdf")],
+        title: "Agreement",
+        useTextTags: true
+      })
+
+    assert is_binary(body)
+    assert String.starts_with?(content_type, "multipart/form-data; boundary=")
+    assert body =~ "agreement.pdf"
+    assert body =~ "Agreement"
+    assert body =~ "true"
   end
 end

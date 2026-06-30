@@ -54,7 +54,11 @@ defmodule Boldsign.Request do
   defp maybe_put_body(req_opts, nil, _multipart?), do: req_opts
 
   defp maybe_put_body(req_opts, body, true) do
-    Keyword.put(req_opts, :form_multipart, Boldsign.Multipart.form_multipart(body_map(body)))
+    {raw_body, content_type} = Boldsign.Multipart.encode_raw(body_map(body))
+
+    req_opts
+    |> Keyword.put(:body, raw_body)
+    |> Keyword.put(:headers, [{"content-type", content_type}])
   end
 
   defp maybe_put_body(req_opts, body, false), do: Keyword.put(req_opts, :json, body)
