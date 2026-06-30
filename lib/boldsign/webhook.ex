@@ -45,7 +45,7 @@ defmodule Boldsign.Webhook do
     parts =
       signature_header
       |> String.split(",")
-      |> Enum.map(&String.split(&1, "=", parts: 2))
+      |> Enum.map(&(&1 |> String.trim() |> String.split("=", parts: 2)))
       |> Enum.filter(&match?([_, _], &1))
       |> Map.new(fn [k, v] -> {k, v} end)
 

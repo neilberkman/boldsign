@@ -32,4 +32,19 @@ defmodule Boldsign.WebhookTest do
   test "verify_signature/3 returns false for malformed header" do
     refute Boldsign.Webhook.verify_signature("payload", "garbage", "secret")
   end
+
+  test "verify_signature/3 handles BoldSign's space after comma (t=TS, s0=SIG)" do
+    raw_body = ~s({"event":"DocumentCompleted","documentId":"abc123"})
+    secret = "my_webhook_secret"
+    timestamp = "1617180024"
+
+    signature =
+      :crypto.mac(:hmac, :sha256, secret, "#{timestamp}.#{raw_body}")
+      |> Base.encode16(case: :lower)
+
+    # BoldSign sends a space after the comma: "t=TIMESTAMP, s0=HEX"
+    header = "t=#{timestamp}, s0=#{signature}"
+
+    assert Boldsign.Webhook.verify_signature(raw_body, header, secret)
+  end
 end

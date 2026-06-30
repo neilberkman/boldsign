@@ -2,10 +2,10 @@ defmodule Boldsign.IdentityVerificationTest do
   use Boldsign.ApiCase, async: true
 
   test "create_embedded_verification_url/2 extracts documentId from params", %{
-    bypass: bypass,
+    server: server,
     client: client
   } do
-    Bypass.expect(bypass, "POST", "/v1/identityVerification/createEmbeddedVerificationUrl", fn conn ->
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/identityVerification/createEmbeddedVerificationUrl", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -22,8 +22,8 @@ defmodule Boldsign.IdentityVerificationTest do
              })
   end
 
-  test "get_report/3 uses POST with query and body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/identityVerification/report", fn conn ->
+  test "get_report/3 uses POST with query and body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/identityVerification/report", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -39,8 +39,8 @@ defmodule Boldsign.IdentityVerificationTest do
              })
   end
 
-  test "get_image/3 uses POST with query and body", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/identityVerification/image", fn conn ->
+  test "get_image/3 uses POST with query and body", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/identityVerification/image", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 
@@ -54,8 +54,8 @@ defmodule Boldsign.IdentityVerificationTest do
              Boldsign.IdentityVerification.get_image(client, "doc_123", %{fileId: "file_456"})
   end
 
-  test "get_image/3 accepts file id shortcut", %{bypass: bypass, client: client} do
-    Bypass.expect(bypass, "POST", "/v1/identityVerification/image", fn conn ->
+  test "get_image/3 accepts file id shortcut", %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/identityVerification/image", fn conn ->
       conn = fetch_query(conn)
       {params, conn} = read_json_body(conn)
 

@@ -2,7 +2,7 @@ defmodule Boldsign.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.7.0"
+  @version "0.8.0"
   @url "https://github.com/neilberkman/boldsign"
   @maintainers [
     "Neil Berkman"
@@ -48,7 +48,7 @@ defmodule Boldsign.MixProject do
       {:plug_crypto, "~> 2.0"},
 
       # test
-      {:bypass, "~> 2.1", only: :test},
+      {:bandit, "~> 1.12", only: :test},
       {:mox, "~> 1.0", only: :test},
 
       # dev
