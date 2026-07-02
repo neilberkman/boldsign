@@ -27,7 +27,7 @@ defmodule Boldsign.Multipart do
   def encode_raw(params) when is_map(params) do
     {file_parts, field_parts} = encode(params)
 
-    boundary = Base.encode16(:crypto.strong_rand_bytes(16), padding: false, case: :lower)
+    boundary = Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
 
     parts =
       Enum.flat_map(field_parts, fn {name, value} ->
