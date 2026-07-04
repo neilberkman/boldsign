@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2026-07-03
+
+### Fixed
+- `Boldsign.WebhookPlug` now acknowledges BoldSign's endpoint-verification ping (`X-BoldSign-Event: Verification`) with `200 OK` before signature validation. The ping is sent before any webhook signing secret exists, so it can never carry a valid signature; previously the plug rejected it with 401 and BoldSign's dashboard "Verify" button always failed.
+
 ## [0.8.0] - 2026-06-30
 
 ### Changed
