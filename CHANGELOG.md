@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1] - 2026-07-14
+
+### Fixed
+- `Boldsign.Document.remind/3` crashed when `receiverEmails` was a list (`encode_query/2 values cannot be lists`). BoldSign expects `receiverEmails` as repeated query params (`?receiverEmails=a&receiverEmails=b`); a list is now expanded into one query entry per email. Omitting `receiverEmails` still reminds all pending signers.
+
 ## [0.10.0] - 2026-07-14
 
 ### Added
