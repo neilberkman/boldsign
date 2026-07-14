@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-07-13
+
+### Added
+- `Boldsign.TextTag` — typed builders for BoldSign text-tag form-field definitions: `signature/2`, `initial/2`, `date_signed/2`, `text_box/2`, `checkbox/2`, plus `build/3` as an escape hatch for any field `type`. Callers get the correct BoldSign type strings (`"Signature"`, `"DateSigned"`, ...) and sensible default sizes instead of hand-writing the `textTagDefinitions` payload. Place a `{{definition_id}}` placeholder in the document, pass the built definitions as `textTagDefinitions` with `useTextTags: true`, and BoldSign replaces the placeholder with the typed field.
+
 ## [0.8.1] - 2026-07-03
 
 ### Fixed
