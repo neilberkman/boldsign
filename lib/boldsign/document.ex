@@ -115,13 +115,20 @@ defmodule Boldsign.Document do
         {"receiverEmails", [:receiverEmails, "receiverEmails"]}
       ])
 
-    Boldsign.Request.request!(
-      client,
-      :post,
-      "/document/remind",
-      query: [documentId: document_id] ++ query,
-      body: body
-    )
+    # BoldSign expects receiverEmails as repeated query params
+    # (?receiverEmails=a&receiverEmails=b). Req raises on a list query value, so
+    # expand a list into one query entry per email. Omit entirely to remind all
+    # pending signers.
+    query =
+      Enum.flat_map([documentId: document_id] ++ query, fn
+        {"receiverEmails", emails} when is_list(emails) ->
+          Enum.map(emails, &{"receiverEmails", &1})
+
+        pair ->
+          [pair]
+      end)
+
+    Boldsign.Request.request!(client, :post, "/document/remind", query: query, body: body)
   end
 
   @doc """

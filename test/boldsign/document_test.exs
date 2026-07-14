@@ -380,4 +380,27 @@ defmodule Boldsign.DocumentTest do
                files: [Boldsign.File.from_binary("%PDF-1.4", "agreement.pdf", "application/pdf")]
              })
   end
+
+  test "remind/3 expands a receiverEmails list into repeated query params",
+       %{server: server, client: client} do
+    Boldsign.TestHTTPServer.expect(server, "POST", "/v1/document/remind", fn conn ->
+      conn = fetch_query(conn)
+      {params, conn} = read_json_body(conn)
+
+      assert conn.query_params["documentId"] == "doc_123"
+      # A list of emails must become repeated query params, not a single list
+      # value (which Req refuses to encode). Both appear in the raw query string.
+      assert conn.query_string =~ "receiverEmails=a%40x.com"
+      assert conn.query_string =~ "receiverEmails=b%40x.com"
+      assert params["Message"] == "nudge"
+
+      send_resp(conn, 204, "")
+    end)
+
+    assert "" ==
+             Boldsign.Document.remind(client, "doc_123", %{
+               "Message" => "nudge",
+               receiverEmails: ["a@x.com", "b@x.com"]
+             })
+  end
 end
