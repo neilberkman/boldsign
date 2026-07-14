@@ -2,7 +2,7 @@ defmodule Boldsign.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.9.0"
+  @version "0.10.0"
   @url "https://github.com/neilberkman/boldsign"
   @maintainers [
     "Neil Berkman"

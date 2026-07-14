@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2026-07-14
+
+### Added
+- `Boldsign.FormField` — typed builders for coordinate-placed signer form fields (`signature/2`, `initial/2`, `date_signed/2`, `text_box/2`, `checkbox/2`, plus `build/3`). These emit BoldSign's **`type`** key (not `fieldType`) — a field object sent with `fieldType` is silently ignored and defaults to a signature field, so a date field renders as a second signature, a checkbox as a signature, and so on, with no error. Bounds accept a `%{x:, y:, width:, height:}` map or an `{x, y, width, height}` tuple, in 96-DPI px from the page top-left.
+
+### Notes
+- Documented on `Boldsign.TextTag` that definition-based text tags on `document/send` (`useTextTags: true` + `textTagDefinitions`) did not persist a document in live testing — the API returns `201` with a `documentId`, but the document 403s on read, is absent from `document/list`, and consumes no API credit. Prefer `Boldsign.FormField` coordinate placement for `document/send`.
+
 ## [0.9.0] - 2026-07-13
 
 ### Added

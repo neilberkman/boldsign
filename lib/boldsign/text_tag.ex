@@ -25,6 +25,18 @@ defmodule Boldsign.TextTag do
       })
 
   Each `definition_id` must appear verbatim in the document as `{{definition_id}}`.
+
+  > #### Prefer coordinate fields on `document/send` {: .warning}
+  >
+  > In live testing against a paid BoldSign account, sending `document/send`
+  > with `useTextTags: true` + `textTagDefinitions` returned `201` with a
+  > `documentId` but **never persisted the document**: the id 403s on read, the
+  > document is absent from `document/list`, and no API credit is consumed. The
+  > coordinate path via `Boldsign.FormField` created a real, listable, credit-
+  > consuming document every time. Until the definition-based text-tag path is
+  > understood, prefer `Boldsign.FormField` for `document/send`. (Text tags
+  > embedded directly in a BoldSign **template**, or full inline tag syntax, are
+  > a separate mechanism and are not covered by this finding.)
   """
 
   @default_sizes %{
